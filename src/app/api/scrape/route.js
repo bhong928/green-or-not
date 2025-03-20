@@ -24,10 +24,12 @@ export async function POST(req) {
             $("h1").first().text().trim() ||
             "Unknown Product";
 
+        // Extracting Product Image
         const productImage =
             $('meta[property="og:image"]').attr("content") ||
             $("img").first().attr("src") ||
             null;
+            console.log("No product image")
 
         const productDescription =
             $('meta[property="og:description"]').attr("content") ||
