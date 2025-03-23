@@ -20,6 +20,7 @@ export default function Home() {
       });
 
       const data = await response.json();
+
       if (response.ok) {
         setResult({
           productName: data.productName,
@@ -29,7 +30,14 @@ export default function Home() {
           ecoLabels: ["USDA Organic", "Fair Trade Certified"], // PLACEHOLDER LABELS
         });
       } else {
-        setResult({ productName: "Error fetching product details" });
+        // ✅ Improved: include all fields with error placeholder
+        setResult({
+          productName: "Error fetching product details",
+          productImage: "",
+          productDescription: "",
+          sustainabilityScore: 0,
+          ecoLabels: [],
+        });
       }
     }
     catch (error) {
@@ -37,7 +45,7 @@ export default function Home() {
     }
 
     setIsLoading(false);
-  }
+  };
 
   return (
     <div className="flex flex-col items-center justify-center bg-[#3F4F44] h-screen">
@@ -64,11 +72,32 @@ export default function Home() {
 
       {/* Display Analysis Results */}
       {result && (
-        <div className="bg-[#DCD7C9] text-black rounded-xl shadow-lg mt-6 p-6"> 
-          <h2 className="text-xl font-bold text-center">Results</h2>
+        <div className="bg-[#DCD7C9] text-black rounded-xl shadow-lg mt-6 p-6 w-full max-w-md max-h-[500px] overflow-y-auto">
+          <h2 className="text-xl font-bold text-center mb-4">Results</h2>
+
+          {/* Product Image */}
+          {result.productImage && (
+            <img
+              src={result.productImage}
+              alt="Product"
+              className="w-40 h-40 object-contain mx-auto mb-4 rounded"
+            />
+          )}
+
+          {/* Product Name */}
           <p><strong>Product Name:</strong> {result.productName}</p>
+
+          {/* Product Description */}
+          {result.productDescription && (
+            <p className="mt-2"><strong>Description:</strong> {result.productDescription}</p>
+          )}
+
+          {/* Sustainability Score */}
           <p><strong>Sustainability Score:</strong> {result.sustainabilityScore}/100</p>
-          <p><strong>Eco-Labels:</strong> {result.ecoLabels.join(", ")}</p>
+
+          {/* Eco-Labels */}
+          <p><strong>Eco-Labels:</strong> {result.ecoLabels.length > 0 ? result.ecoLabels.join(", ") : "None found"}</p>
+          
         </div>
       )}
     </div>

@@ -25,12 +25,22 @@ export async function POST(req) {
             "Unknown Product";
 
         // Extracting Product Image
-        const productImage =
-            $('meta[property="og:image"]').attr("content") ||
+        let productImage =
+            $('meta[property="og:image"]').attr("content") || 
+            $('meta[name="twitter:image"]').attr("content") || 
             $("img").first().attr("src") ||
             null;
-            console.log("No product image")
 
+        if (productImage && productImage.startsWith("/")) {
+            const urlObj = new URL(url);
+            productImage = `${urlObj.origin}${productImage}`;
+        }
+        if (!productImage) {
+            console.log("No product image found");
+            productImage = "https://via.placeholder.com/150"; // fallback
+          }
+
+        // Extracting Product Description
         const productDescription =
             $('meta[property="og:description"]').attr("content") ||
             $('meta[name="description"]').attr("content") ||
