@@ -51,7 +51,7 @@ export default function Home() {
     <div className="flex flex-col items-center justify-center bg-[#3F4F44] h-screen">
       <div className="flex flex-col items-center justify-center p-10">
         <h1 className="font-extrabold text-7xl text-[#DCD7C9] mb-4">Green or Not</h1>
-        <p className="mb-4 text-lg font-bold">Paste a product an Amazon product link below</p>
+        <p className="mb-4 text-lg font-bold">Paste an Amazon product link below</p>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col items-center w-full max-w-md gap-4">
