@@ -28,6 +28,8 @@ export async function POST(req) {
         let productImage =
             $('meta[property="og:image"]').attr("content") || 
             $('meta[name="twitter:image"]').attr("content") || 
+            $("#imgTagWrapperId img").attr("data-old-hires") || // Amazon-specific attribute
+            $("#imgTagWrapperId img").attr("src") ||
             $("img").first().attr("src") ||
             null;
 
@@ -37,7 +39,10 @@ export async function POST(req) {
         }
         if (!productImage) {
             console.log("No product image found");
-            productImage = "https://via.placeholder.com/150"; // fallback
+            productImage = 
+                $("#imgTagWrapperId img").attr("data-src") ||
+                $("#imgTagWrapperId img").attr("src") ||
+            null;
           }
 
         // Extracting Product Description
