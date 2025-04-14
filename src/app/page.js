@@ -1,9 +1,15 @@
 "use client";
 import { useState } from "react";
 
-// Sample scoring function integrated in your component file.
+// A refined scoring function without a custom score
 function calculateSustainabilityScore(description, ecoLabels = []) {
-  let score = 0;
+  let totalScore = 0;
+  let breakdown = {
+    keywords: [],
+    ecoLabels: [],
+  };
+
+  // Define eco-friendly keywords with base points
   const keywords = [
     { keyword: "eco-friendly", points: 10 },
     { keyword: "sustainable", points: 10 },
@@ -14,12 +20,17 @@ function calculateSustainabilityScore(description, ecoLabels = []) {
     { keyword: "energy efficient", points: 10 },
     { keyword: "green", points: 10 },
   ];
+
+  // Analyze the product description using keywords
   const lowerDescription = description.toLowerCase();
   keywords.forEach(item => {
     if (lowerDescription.includes(item.keyword)) {
-      score += item.points;
+      totalScore += item.points;
+      breakdown.keywords.push({ keyword: item.keyword, points: item.points });
     }
   });
+
+  // Weight for eco-certifications
   const ecoLabelWeights = {
     "USDA Organic": 20,
     "Fair Trade Certified": 20,
@@ -28,12 +39,17 @@ function calculateSustainabilityScore(description, ecoLabels = []) {
     "LEED Certified": 10,
     "B Corp": 10,
   };
+
   ecoLabels.forEach(label => {
     if (ecoLabelWeights[label]) {
-      score += ecoLabelWeights[label];
+      totalScore += ecoLabelWeights[label];
+      breakdown.ecoLabels.push({ label, points: ecoLabelWeights[label] });
     }
   });
-  return Math.min(score, 100);
+
+  // Normalize so the final score doesn't exceed 100
+  const finalScore = Math.min(totalScore, 100);
+  return { finalScore, breakdown };
 }
 
 export default function Home() {
@@ -55,16 +71,19 @@ export default function Home() {
       const data = await response.json();
 
       if (response.ok) {
-        // Example: Use static eco-labels for now (ideally, scrape or fetch real data)
-        const ecoLabels = ["USDA Organic", "Fair Trade Certified"];
-        const sustainabilityScore = calculateSustainabilityScore(data.productDescription, ecoLabels);
+        // Use the scraped eco-labels from the API response
+        const ecoLabels = data.ecoLabels || [];
+
+        // Calculate the sustainability score using keywords and eco-labels
+        const scoreData = calculateSustainabilityScore(data.productDescription, ecoLabels);
 
         setResult({
           productName: data.productName,
           productImage: data.productImage,
           productDescription: data.productDescription,
-          sustainabilityScore,
+          sustainabilityScore: scoreData.finalScore,
           ecoLabels,
+          scoreBreakdown: scoreData.breakdown, // Contains detailed score breakdown
         });
       } else {
         setResult({
@@ -73,19 +92,36 @@ export default function Home() {
           productDescription: "",
           sustainabilityScore: 0,
           ecoLabels: [],
+          scoreBreakdown: { keywords: [], ecoLabels: [] },
         });
       }
     } catch (error) {
       console.error("Fetch Error:", error);
+      setResult({
+        productName: "Error fetching product details",
+        productImage: "",
+        productDescription: "",
+        sustainabilityScore: 0,
+        ecoLabels: [],
+        scoreBreakdown: { keywords: [], ecoLabels: [] },
+      });
     }
     setIsLoading(false);
+  };
+
+  // Clear the input and result state
+  const handleClear = () => {
+    setProductLink("");
+    setResult(null);
   };
 
   return (
     <div className="flex flex-col items-center justify-center bg-[#3F4F44] h-screen">
       <div className="flex flex-col items-center justify-center p-10">
         <h1 className="font-extrabold text-7xl text-[#DCD7C9] mb-4">Green or Not</h1>
-        <p className="mb-4 text-lg font-bold">Paste an Amazon product link below</p>
+        <p className="mb-4 text-lg font-bold text-[#DCD7C9]">
+          Paste an Amazon product link below
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col items-center w-full max-w-md gap-4">
@@ -96,12 +132,21 @@ export default function Home() {
           value={productLink}
           onChange={(e) => setProductLink(e.target.value)}
         />
-        <button
-          type="submit"
-          className="bg-[#DCD7C9] border-1 rounded-2xl font-semibold hover:bg-[#A27B5C] transition px-6 py-1"
-        >
-          {isLoading ? "Analyzing..." : "Analyze Product"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            className="bg-[#DCD7C9] border-1 rounded-2xl font-semibold hover:bg-[#A27B5C] transition px-6 py-1"
+          >
+            {isLoading ? "Analyzing..." : "Analyze Product"}
+          </button>
+          <button
+            type="button"
+            onClick={handleClear}
+            className="bg-[#DCD7C9] border-1 rounded-2xl font-semibold hover:bg-[#A27B5C] transition px-6 py-1"
+          >
+            Clear
+          </button>
+        </div>
       </form>
 
       {result && (
@@ -119,7 +164,33 @@ export default function Home() {
             <p className="mt-2"><strong>Description:</strong> {result.productDescription}</p>
           )}
           <p><strong>Sustainability Score:</strong> {result.sustainabilityScore}/100</p>
-          <p><strong>Eco-Labels:</strong> {result.ecoLabels.length > 0 ? result.ecoLabels.join(", ") : "None found"}</p>
+
+          {/* Displaying the Score Breakdown */}
+          <div className="mt-4">
+            <h3 className="font-bold">Score Breakdown:</h3>
+            {result.scoreBreakdown?.keywords?.length > 0 && (
+              <div>
+                <p className="underline">Keywords:</p>
+                <ul>
+                  {result.scoreBreakdown.keywords.map((item, index) => (
+                    <li key={`kw-${index}`}>"{item.keyword}" adds {item.points} points</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {result.scoreBreakdown?.ecoLabels?.length > 0 && (
+              <div>
+                <p className="underline">Eco-Labels:</p>
+                <ul>
+                  {result.scoreBreakdown.ecoLabels.map((item, index) => (
+                    <li key={`el-${index}`}>{item.label} adds {item.points} points</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          <p><strong>Eco-Labels Detected:</strong> {result.ecoLabels.length > 0 ? result.ecoLabels.join(", ") : "None found"}</p>
         </div>
       )}
     </div>
