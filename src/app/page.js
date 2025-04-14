@@ -173,7 +173,7 @@ export default function Home() {
                 <p className="underline">Keywords:</p>
                 <ul>
                   {result.scoreBreakdown.keywords.map((item, index) => (
-                    <li key={`kw-${index}`}>"{item.keyword}" adds {item.points} points</li>
+                    <li key={`kw-${index}`}>&quot;{item.keyword}&quot; adds {item.points} points</li>
                   ))}
                 </ul>
               </div>
