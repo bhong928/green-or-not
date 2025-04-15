@@ -1,8 +1,20 @@
 "use client";
 import { useState } from "react";
 
-// A refined scoring function without a custom score
-function calculateSustainabilityScore(description, ecoLabels = []) {
+// Helper function to select a tree image based on sustainability score
+function getTreeImage(score) {
+  if (score <= 25) {
+    return "/deadtree.png";      // Lowest score
+  } else if (score <= 50) {
+    return "/snow_tree.png";      // Second lowest
+  } else if (score <= 75) {
+    return "/falltree.png";       // Second best
+  } else {
+    return "/green_tree.png";     // Best score
+  }
+}
+
+function calculateSustainabilityScore(productName, description, ecoLabels = []) {
   let totalScore = 0;
   let breakdown = {
     keywords: [],
@@ -12,6 +24,7 @@ function calculateSustainabilityScore(description, ecoLabels = []) {
   // Define eco-friendly keywords with base points
   const keywords = [
     { keyword: "eco-friendly", points: 10 },
+    { keyword: "eco friendly", points: 10 },
     { keyword: "sustainable", points: 10 },
     { keyword: "organic", points: 10 },
     { keyword: "biodegradable", points: 10 },
@@ -19,12 +32,38 @@ function calculateSustainabilityScore(description, ecoLabels = []) {
     { keyword: "non-toxic", points: 10 },
     { keyword: "energy efficient", points: 10 },
     { keyword: "green", points: 10 },
+    { keyword: "bamboo", points: 5 },
+    { keyword: "vegan", points: 5 },
+    { keyword: "natural", points: 5 },
+    { keyword: "wooden", points: 5 },
+    { keyword: "renewable", points: 10 },
+    { keyword: "compostable", points: 10 },
+    { keyword: "carbon neutral", points: 10 },
+    { keyword: "plant-based", points: 10 },
+    { keyword: "cruelty-free", points: 10 },
+    { keyword: "zero waste", points: 10 },
+    { keyword: "sustainably sourced", points: 10 },
+    { keyword: "eco conscious", points: 10 },
+    { keyword: "environmentally friendly", points: 10 },
+    { keyword: "low carbon", points: 10 },
+    { keyword: "waste reduction", points: 10 },
+    { keyword: "recycled", points: 10 },
+    { keyword: "upcycled", points: 10 },
+    { keyword: "eco packaging", points: 10 },
+    { keyword: "non-plastic", points: 10 },
+    { keyword: "reusable", points: 5 },
+    { keyword: "responsibly sourced", points: 10 },
+    { keyword: "organic cotton", points: 10 },
+    { keyword: "gmo-free", points: 10 },
+    { keyword: "clean energy", points: 10 },
+    { keyword: "energy saving", points: 10 },
   ];
 
-  // Analyze the product description using keywords
-  const lowerDescription = description.toLowerCase();
+  // Combine product name and description for keyword scanning
+  const combinedText = (productName + " " + description).toLowerCase();
+  
   keywords.forEach(item => {
-    if (lowerDescription.includes(item.keyword)) {
+    if (combinedText.includes(item.keyword)) {
       totalScore += item.points;
       breakdown.keywords.push({ keyword: item.keyword, points: item.points });
     }
@@ -38,6 +77,11 @@ function calculateSustainabilityScore(description, ecoLabels = []) {
     "Cradle to Cradle": 15,
     "LEED Certified": 10,
     "B Corp": 10,
+    "FSC Certified": 15,
+    "Blue Angel": 10,
+    "EcoLogo": 10,
+    "GreenGuard Certified": 10,
+    "Non-GMO Project Verified": 10,
   };
 
   ecoLabels.forEach(label => {
@@ -61,7 +105,6 @@ export default function Home() {
     e.preventDefault();
     setIsLoading(true);
     setResult(null);
-
     try {
       const response = await fetch("/api/scrape", {
         method: "POST",
@@ -69,21 +112,20 @@ export default function Home() {
         body: JSON.stringify({ url: productLink }),
       });
       const data = await response.json();
-
       if (response.ok) {
-        // Use the scraped eco-labels from the API response
         const ecoLabels = data.ecoLabels || [];
-
-        // Calculate the sustainability score using keywords and eco-labels
-        const scoreData = calculateSustainabilityScore(data.productDescription, ecoLabels);
-
+        const scoreData = calculateSustainabilityScore(
+          data.productName,       // Pass productName
+          data.productDescription, // Pass productDescription
+          ecoLabels
+        );
         setResult({
           productName: data.productName,
           productImage: data.productImage,
           productDescription: data.productDescription,
           sustainabilityScore: scoreData.finalScore,
           ecoLabels,
-          scoreBreakdown: scoreData.breakdown, // Contains detailed score breakdown
+          scoreBreakdown: scoreData.breakdown,
         });
       } else {
         setResult({
@@ -109,14 +151,13 @@ export default function Home() {
     setIsLoading(false);
   };
 
-  // Clear the input and result state
   const handleClear = () => {
     setProductLink("");
     setResult(null);
   };
 
   return (
-    <div className="flex flex-col items-center justify-center bg-[#3F4F44] h-screen">
+    <div className="min-h-screen flex flex-col items-center justify-start bg-[#3F4F44]">
       <div className="flex flex-col items-center justify-center p-10">
         <h1 className="font-extrabold text-7xl text-[#DCD7C9] mb-4">Green or Not</h1>
         <p className="mb-4 text-lg font-bold text-[#DCD7C9]">
@@ -150,48 +191,57 @@ export default function Home() {
       </form>
 
       {result && (
-        <div className="bg-[#DCD7C9] text-black rounded-xl shadow-lg mt-6 p-6 w-full max-w-md max-h-[500px] overflow-y-auto">
-          <h2 className="text-xl font-bold text-center mb-4">Results</h2>
-          {result.productImage && (
+        <>
+          <div className="my-4 flex flex-col items-center">
             <img
-              src={result.productImage}
-              alt="Product"
-              className="w-40 h-40 object-contain mx-auto mb-4 rounded"
+              src={getTreeImage(result.sustainabilityScore)}
+              alt="Sustainability Tree"
+              className="w-100 h-100 object-contain rounded"
             />
-          )}
-          <p><strong>Product Name:</strong> {result.productName}</p>
-          {result.productDescription && (
-            <p className="mt-2"><strong>Description:</strong> {result.productDescription}</p>
-          )}
-          <p><strong>Sustainability Score:</strong> {result.sustainabilityScore}/100</p>
-
-          {/* Displaying the Score Breakdown */}
-          <div className="mt-4">
-            <h3 className="font-bold">Score Breakdown:</h3>
-            {result.scoreBreakdown?.keywords?.length > 0 && (
-              <div>
-                <p className="underline">Keywords:</p>
-                <ul>
-                  {result.scoreBreakdown.keywords.map((item, index) => (
-                    <li key={`kw-${index}`}>&quot;{item.keyword}&quot; adds {item.points} points</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {result.scoreBreakdown?.ecoLabels?.length > 0 && (
-              <div>
-                <p className="underline">Eco-Labels:</p>
-                <ul>
-                  {result.scoreBreakdown.ecoLabels.map((item, index) => (
-                    <li key={`el-${index}`}>{item.label} adds {item.points} points</li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
-
-          <p><strong>Eco-Labels Detected:</strong> {result.ecoLabels.length > 0 ? result.ecoLabels.join(", ") : "None found"}</p>
-        </div>
+          <div className="bg-[#DCD7C9] text-black rounded-xl shadow-lg mt-6 p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold text-center mb-4">Results</h2>
+            {result.productImage && (
+              <img
+                src={result.productImage}
+                alt="Product"
+                className="w-40 h-40 object-contain mx-auto mb-4 rounded"
+              />
+            )}
+            <p><strong>Product Name:</strong> {result.productName}</p>
+            {result.productDescription && (
+              <p className="mt-2"><strong>Description:</strong> {result.productDescription}</p>
+            )}
+            <p><strong>Sustainability Score:</strong> {result.sustainabilityScore}/100</p>
+            <div className="mt-4">
+              <h3 className="font-bold">Score Breakdown:</h3>
+              {result.scoreBreakdown?.keywords?.length > 0 && (
+                <div>
+                  <p className="underline">Keywords:</p>
+                  <ul>
+                    {result.scoreBreakdown.keywords.map((item, index) => (
+                      <li key={`kw-${index}`}>&quot;{item.keyword}&quot; adds {item.points} points</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {result.scoreBreakdown?.ecoLabels?.length > 0 && (
+                <div>
+                  <p className="underline">Eco-Labels:</p>
+                  <ul>
+                    {result.scoreBreakdown.ecoLabels.map((item, index) => (
+                      <li key={`el-${index}`}>{item.label} adds {item.points} points</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            <p>
+              <strong>Eco-Labels Detected:</strong>{" "}
+              {result.ecoLabels.length > 0 ? result.ecoLabels.join(", ") : "None found"}
+            </p>
+          </div>
+        </>
       )}
     </div>
   );
